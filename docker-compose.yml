@@ -1,0 +1,44 @@
+version: '3'
+
+services:
+    backend:
+        build: 
+            context: ./backend
+        volumes:
+            - ./backend/:/app
+        ports: 
+            - 8000:8000
+        tty: true
+
+    postgresql:
+        image: postgres:latest
+        volumes:
+            - postgresql:/var/lib/postgresql/data
+        ports:
+            - 5432:5432
+        environment:
+            - POSTGRES_DB=tf_sample
+            - POSTGRES_USER=root
+            - POSTGRES_PASSWORD=1234
+
+    nginx:
+        image: nginx:1.19.8-alpine
+        restart: unless-stopped
+        tty: true
+        ports: 
+            - 80:80
+        volumes: 
+            - ./backend/:/var/www/
+            - ./nginx:/etc/nginx/conf.d
+    
+    frontend:
+        build:
+            dockerfile: Dockerfile.dev
+            context: ./frontend
+        volumes:
+        - ./frontend:/app
+        # - /app/node_modules
+        # - /app/.nuxt
+volumes:
+    postgresql:
+        driver: local
