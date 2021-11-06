@@ -13,7 +13,7 @@ provider "aws" {
   secret_key = var.aws_secret_key
 }
 
-resource "aws_vpc" "tf-vpc" {
+resource "aws_vpc" "tf_vpc" {
   cidr_block = "10.0.0.0/16"
 
   tags = {
@@ -21,6 +21,6 @@ resource "aws_vpc" "tf-vpc" {
   }
 }
 
-resource "aws_ecr_repository" "tf-ecr" {
+resource "aws_ecr_repository" "tf_ecr" {
   name = "terraform-sample"
 }
