@@ -5,7 +5,7 @@ phases:
       - echo Logging in to DockerHub...
       # Dockerhub login increases dockerhub's image pull rate limiting
       # See https://www.docker.com/increase-rate-limits#:~:text=Understanding%20Docker%20Hub%20Rate%20Limiting&text=Anonymous%20and%20Free%20Docker%20Hub,pull%20requests%20per%20six%20hours.
-      - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+      - echo "$DOCKERHUB_PASSWORD" | docker login --username $DOCKERHUB_USERNAME --password-stdin
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
   build: 
