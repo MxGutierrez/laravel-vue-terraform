@@ -60,7 +60,7 @@ resource "aws_iam_role_policy" "codebuild" {
         "ecr:CompleteLayerUpload",
         "ecr:PutImage"
       ],
-      "Resource": "${aws_ecr_repository.tf_ecr.arn}"
+      "Resource": "*"
     }
   ]
 }
@@ -85,6 +85,11 @@ resource "aws_codebuild_project" "codebuild" {
     image        = "aws/codebuild/standard:3.0"
     type         = "LINUX_CONTAINER"
 
+    // Use privileged mode otherwise build errors out when building image:
+    // Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+    // See https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/codebuild_project#privileged_mode
+    privileged_mode = true
+
     environment_variable {
       name  = "AWS_REGION"
       value = var.aws_region
@@ -92,7 +97,7 @@ resource "aws_codebuild_project" "codebuild" {
 
     environment_variable {
       name  = "AWS_ACCOUNT_ID"
-      value = aws_caller_identity.current.id
+      value = data.aws_caller_identity.current.id
     }
 
     environment_variable {
