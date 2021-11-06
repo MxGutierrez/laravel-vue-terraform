@@ -21,3 +21,8 @@ variable "dockerhub_password" {
   type      = string
   sensitive = true
 }
+
+variable "repositories" {
+  type = list(string)
+  default = ["frontend", "backend"]
+}

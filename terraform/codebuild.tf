@@ -100,11 +100,6 @@ resource "aws_codebuild_project" "codebuild" {
       value = data.aws_caller_identity.current.id
     }
 
-    environment_variable {
-      name  = "IMAGE_REPO_NAME"
-      value = aws_ecr_repository.tf_ecr.name
-    }
-
     // Use secrets manager on real builds:
     // https://stackoverflow.com/questions/64967922/docker-hub-login-for-aws-codebuild-docker-hub-limit
     environment_variable {
@@ -115,6 +110,15 @@ resource "aws_codebuild_project" "codebuild" {
     environment_variable {
       name  = "DOCKERHUB_PASSWORD"
       value = var.dockerhub_password
+    }
+
+    dynamic "environment_variable" {
+      for_each = aws_ecr_repository.ecrs
+
+      content {
+        name  = "IMAGE_${upper(environment_variable.value["name"])}"
+        value = environment_variable.value["name"]
+      }
     }
   }
 }

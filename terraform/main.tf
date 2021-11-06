@@ -21,6 +21,7 @@ resource "aws_vpc" "tf_vpc" {
   }
 }
 
-resource "aws_ecr_repository" "tf_ecr" {
-  name = "terraform-sample"
+resource "aws_ecr_repository" "ecrs" {
+  for_each = toset(var.repositories)
+  name = each.key
 }
