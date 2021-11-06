@@ -1,6 +1,6 @@
 resource "aws_s3_bucket" "codepipeline_artifacts" {
-  bucket = "terraform-sample-codepipeline"
-  acl    = "private"
+  bucket        = "terraform-sample-codepipeline"
+  acl           = "private"
   force_destroy = true
 
   tags = {
@@ -75,7 +75,7 @@ EOF
 }
 
 resource "aws_codepipeline" "pipeline" {
-  name = "terraform-sample-pipeline"
+  name     = "terraform-sample-pipeline"
   role_arn = aws_iam_role.codepipeline.arn
 
   artifact_store {
@@ -87,18 +87,18 @@ resource "aws_codepipeline" "pipeline" {
     name = "Source"
 
     action {
-        name = "Source"
-        category = "Source"
-        owner = "AWS"
-        provider = "CodeStarSourceConnection"
-        version = "1"
-        output_artifacts = ["source_output"]
+      name             = "Source"
+      category         = "Source"
+      owner            = "AWS"
+      provider         = "CodeStarSourceConnection"
+      version          = "1"
+      output_artifacts = ["source_output"]
 
-        configuration = {
-          ConnectionArn = aws_codestarconnections_connection.github_app.arn
-          FullRepositoryId = "MxGutierrez/terraform-sample"
-          BranchName = "master"
-        }
+      configuration = {
+        ConnectionArn    = aws_codestarconnections_connection.github_app.arn
+        FullRepositoryId = "MxGutierrez/terraform-sample"
+        BranchName       = "master"
+      }
     }
   }
 
