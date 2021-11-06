@@ -3,8 +3,10 @@
 </template>
 
 <script lang="ts">
+import { Context } from '@nuxt/types';
+
 export default {
-  async asyncData({ $axios }) {
+  async asyncData({ $axios } : Context) {
     try {
       const { data } = await $axios.get('/test');
       return {
