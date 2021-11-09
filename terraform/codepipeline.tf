@@ -119,4 +119,22 @@ resource "aws_codepipeline" "pipeline" {
       }
     }
   }
+
+  # stage {
+  #   name = "Deploy"
+
+  #   action {
+  #     name = "Deploy"
+  #     category = "Deploy"
+  #     owner = "AWS"
+  #     provider = "CodeDeployToECS"
+  #     version = 1
+
+  #     configuration = {
+  #       ApplicationName = aws_codedeploy_app.tf_sample.name
+  #       DeploymentGroupName = aws_codedeploy_deployment_group.tf_sample.id
+  #     }
+  #   }
+  # }
 }
+
