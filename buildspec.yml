@@ -20,3 +20,6 @@ phases:
       - echo Pushing the Docker image...
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_FRONTEND:$CODEBUILD_RESOLVED_SOURCE_VERSION
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_FRONTEND:latest
+      - printf '[{"name":"%s","imageUri":"%s"}]' frontend $$AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_FRONTEND:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json
+  artifacts:
+    files: imagedefinitions.json
