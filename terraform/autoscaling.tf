@@ -46,8 +46,8 @@ resource "aws_security_group" "ecs_sg" {
   }
 
   ingress {
-    from_port   = 443
-    to_port     = 443
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -86,6 +86,7 @@ resource "aws_autoscaling_group" "failure_analysis_ecs_asg" {
   name                 = "asg"
   vpc_zone_identifier  = [aws_subnet.public.id]
   launch_configuration = aws_launch_configuration.ecs_launch_config.name
+  # load_balancers = [aws_elb.ecs.id]
 
   desired_capacity          = 1
   min_size                  = 1
@@ -93,3 +94,29 @@ resource "aws_autoscaling_group" "failure_analysis_ecs_asg" {
   health_check_grace_period = 300
   health_check_type         = "EC2"
 }
+
+# resource "aws_lb_target_group" "codedeploy_production" {
+#   name     = "codedeploy_production"
+#   port     = 3000
+#   protocol = "HTTP"
+#   vpc_id   = aws_vpc.tf_vpc.id
+# }
+
+
+# resource "aws_elb" "ecs" {
+#   name               = "ecs-lb"
+#   availability_zones = [aws_subnet.public.availability_zone, aws_subnet.public2.availability_zone]
+
+#   listener {
+#     instance_port     = 3000
+#     instance_protocol = "http"
+#     lb_port           = 80
+#     lb_protocol       = "http"
+#   }
+
+#   cross_zone_load_balancing   = true
+
+#   tags = {
+#     Name = "foobar-terraform-elb"
+#   }
+# }

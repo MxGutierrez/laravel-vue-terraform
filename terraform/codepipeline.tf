@@ -74,6 +74,11 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
 EOF
 }
 
+resource "aws_iam_role_policy_attachment" "ecs_fullaccess" {
+  role       = aws_iam_role.codepipeline.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonECS_FullAccess"
+}
+
 resource "aws_codepipeline" "pipeline" {
   name     = "terraform-sample-pipeline"
   role_arn = aws_iam_role.codepipeline.arn
@@ -120,21 +125,24 @@ resource "aws_codepipeline" "pipeline" {
     }
   }
 
-  # stage {
-  #   name = "Deploy"
+  stage {
+    name = "Deploy"
 
-  #   action {
-  #     name = "Deploy"
-  #     category = "Deploy"
-  #     owner = "AWS"
-  #     provider = "CodeDeployToECS"
-  #     version = 1
+    action {
+      name = "Deploy"
+      category = "Deploy"
+      owner = "AWS"
+      provider = "ECS"
+      version = 1
 
-  #     configuration = {
-  #       ApplicationName = aws_codedeploy_app.tf_sample.name
-  #       DeploymentGroupName = aws_codedeploy_deployment_group.tf_sample.id
-  #     }
-  #   }
-  # }
+      configuration = {
+        ClusterName = aws_ecs_cluster.cluster.name
+        ServiceName = aws_ecs_service.frontend.name
+        FileName = "imagedefinitions.json"
+      }
+
+      input_artifacts = ["build_output"]
+    }
+  }
 }
 

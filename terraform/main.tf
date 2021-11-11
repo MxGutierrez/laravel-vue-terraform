@@ -21,6 +21,7 @@ resource "aws_vpc" "tf_vpc" {
   }
 }
 
+// TODO create both subnets with 1 block
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.tf_vpc.id
   cidr_block              = "10.0.0.0/25"
@@ -28,6 +29,16 @@ resource "aws_subnet" "public" {
 
   tags = {
     Name = "terraform-sample-public-subnet"
+  }
+}
+
+resource "aws_subnet" "public2" {
+  vpc_id                  = aws_vpc.tf_vpc.id
+  cidr_block              = "10.0.0.128/25"
+  map_public_ip_on_launch = true
+
+  tags = {
+    Name = "terraform-sample-public-subnet2"
   }
 }
 

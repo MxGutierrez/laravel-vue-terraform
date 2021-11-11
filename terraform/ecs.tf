@@ -27,30 +27,23 @@ resource "aws_iam_role_policy_attachment" "task_execution_policy_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-
 resource "aws_ecs_task_definition" "frontend" {
   family             = "frontend"
   execution_role_arn = aws_iam_role.task_execution_role.arn
-  container_definitions = jsonencode([
-    {
-      name      = "frontend"
-      image     = "${aws_ecr_repository.ecrs["frontend"].repository_url}:latest"
-      cpu       = 10
-      memory    = 512
-      essential = true
-      portMappings = [
-        {
-          containerPort = 3000
-          hostPort      = 3000
-        }
-      ]
-    }
-  ])
+
+  container_definitions = templatefile("../frontend/taskdef.json", {
+    IMAGE_PATH = "${aws_ecr_repository.ecrs["frontend"].repository_url}:latest"
+  })
 }
 
 resource "aws_ecs_service" "frontend" {
   name            = "frontend"
   cluster         = aws_ecs_cluster.cluster.id
   task_definition = aws_ecs_task_definition.frontend.arn
-  desired_count   = 2
+  deployment_minimum_healthy_percent = 0
+  desired_count   = 1
+
+  lifecycle {
+    ignore_changes = [task_definition]
+  }
 }
