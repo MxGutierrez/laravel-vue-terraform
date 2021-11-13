@@ -37,8 +37,8 @@ services:
             context: ./frontend
         volumes:
         - ./frontend:/app
-        # - /app/node_modules
-        # - /app/.nuxt
+        - /app/node_modules
+        - /app/.nuxt
 volumes:
     postgresql:
         driver: local
