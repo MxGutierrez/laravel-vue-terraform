@@ -22,7 +22,7 @@ variable "dockerhub_password" {
   sensitive = true
 }
 
-variable "repositories" {
+variable "container_images" {
   type = list(string)
   default = ["frontend", "backend"]
 }

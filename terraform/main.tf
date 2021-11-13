@@ -1,70 +1,34 @@
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 3.0"
-    }
-  }
+data "aws_caller_identity" "current" {}
+
+module "networking" {
+  source       = "./Networking"
+  vpc_cidr     = "10.0.0.0/24"
+  public_cidrs = ["10.0.0.0/25", "10.0.0.128/25"]
 }
 
-provider "aws" {
-  region     = var.aws_region
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
+module "ecrs" {
+  source     = "./ECR"
+  for_each   = toset(var.container_images)
+  image_name = each.key
 }
 
-resource "aws_vpc" "tf_vpc" {
-  cidr_block = "10.0.0.0/24"
-
-  tags = {
-    Name = "terraform-sample"
-  }
+module "ecs_cluster" {
+  source = "./ECS/Cluster"
 }
 
-// TODO create both subnets with 1 block
-resource "aws_subnet" "public" {
-  vpc_id                  = aws_vpc.tf_vpc.id
-  cidr_block              = "10.0.0.0/25"
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "terraform-sample-public-subnet"
-  }
+module "ecs_task_definitions" {
+  source                     = "./ECS/TaskDefinition"
+  for_each                   = toset(var.container_images)
+  task_name                  = each.key
+  execution_role_arn         = module.ecs_cluster.task_execution_role_arn
+  container_definitions_path = "../${each.key}/taskdef.json"
+  ecr_repository_url         = ecrs[each.key].repository_url
 }
 
-resource "aws_subnet" "public2" {
-  vpc_id                  = aws_vpc.tf_vpc.id
-  cidr_block              = "10.0.0.128/25"
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name = "terraform-sample-public-subnet2"
-  }
-}
-
-resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.tf_vpc.id
-
-  tags = {
-    Name = "main"
-  }
-}
-
-resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.tf_vpc.id
-
-  tags = {
-    Name = "example"
-  }
-}
-
-resource "aws_route" "route" {
-  route_table_id         = aws_route_table.public.id
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.gw.id
-}
-
-resource "aws_route_table_association" "public_subnet" {
-  subnet_id      = aws_subnet.public.id
-  route_table_id = aws_route_table.public.id
+module "ecs_services" {
+  source              = "./ECS/Service"
+  for_each            = toset(var.container_images)
+  name                = each.key
+  cluster_id          = module.ecs_cluster.id
+  task_definition_arn = module.ecs_task_definitions[each.key].arn
 }
