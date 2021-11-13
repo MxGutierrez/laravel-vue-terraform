@@ -24,5 +24,6 @@ variable "dockerhub_password" {
 
 variable "container_images" {
   type = list(string)
-  default = ["frontend", "backend"]
+  default = ["frontend"]
+  # default = ["frontend", "backend"]
 }

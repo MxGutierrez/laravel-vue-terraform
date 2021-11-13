@@ -74,7 +74,7 @@ resource "aws_codepipeline" "pipeline" {
   role_arn = aws_iam_role.codepipeline.arn
 
   artifact_store {
-    location = var.artifact_bucket_arn
+    location = var.artifact_bucket_id
     type     = "S3"
   }
 
@@ -101,18 +101,18 @@ resource "aws_codepipeline" "pipeline" {
     name = "Build"
 
     dynamic "action" {
-      count = length(var.images)
+      for_each = var.images
       content {
-        name             = "Build-${var.images[count.index].name}"
+        name             = "Build-${action.key}"
         category         = "Build"
         owner            = "AWS"
         provider         = "CodeBuild"
         input_artifacts  = ["source_output"]
-        output_artifacts = ["${var.images[count.index].name}_build_output"]
+        output_artifacts = ["${action.key}_build_output"]
         version          = "1"
 
         configuration = {
-          ProjectName = var.images[count.index].codebuild_project_id
+          ProjectName = action.value.codebuild_project_id
         }
       }
     }
@@ -122,10 +122,10 @@ resource "aws_codepipeline" "pipeline" {
     name = "Deploy"
 
     dynamic "action" {
-      count = length(var.images)
+      for_each = var.images
       content {
 
-        name     = "Deploy-${var.images[count.index].name}"
+        name     = "Deploy-${action.key}"
         category = "Deploy"
         owner    = "AWS"
         provider = "ECS"
@@ -133,11 +133,11 @@ resource "aws_codepipeline" "pipeline" {
 
         configuration = {
           ClusterName = var.ecs_cluster_id
-          ServiceName = var.images[count.index].ecs_service_id
+          ServiceName = action.value.ecs_service_id
           FileName    = "imagedefinitions.json"
         }
 
-        input_artifacts = ["${var.images[count.index].name}_build_output"]
+        input_artifacts = ["${action.key}_build_output"]
       }
     }
   }

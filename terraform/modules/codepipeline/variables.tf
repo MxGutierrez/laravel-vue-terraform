@@ -2,6 +2,10 @@ variable "artifact_bucket_arn" {
   type = string
 }
 
+variable "artifact_bucket_id" {
+  type = string
+}
+
 variable "github_repo_id" {
   type = string
 }
@@ -15,8 +19,7 @@ variable "ecs_cluster_id" {
 }
 
 variable "images" {
-  type = list(object({
-    name                 = string
+  type = map(object({
     codebuild_project_id = string
     ecs_service_id       = string
   }))

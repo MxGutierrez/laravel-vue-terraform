@@ -29,8 +29,8 @@ module "ecs_task_definitions" {
   for_each                   = toset(var.container_images)
   task_name                  = each.key
   execution_role_arn         = module.ecs_cluster.task_execution_role_arn
-  container_definitions_path = "../${each.key}/taskdef.json"
-  ecr_repository_url         = ecrs[each.key].repository_url
+  container_definitions_path = "${abspath(path.root)}/../${each.key}/taskdef.json"
+  ecr_repository_url         = module.ecrs[each.key].repository_url
 }
 
 module "ecs_services" {
@@ -57,31 +57,33 @@ module "codebuild_role" {
 }
 
 module "codebuilds" {
-  source              = "./modules/codebuild"
-  for_each            = toset(var.container_images)
-  artifact_bucket_arn = aws_s3_bucket.codepipeline_artifacts.arn
-  service_role_arn    = module.codebuild_role.arn
-  account_id          = aws_caller_identity.current.id
-  region              = var.aws_region
-  dockerhub_username  = var.dockerhub_username
-  dockerhub_password  = var.dockerhub_password
-  image_name          = each.key
+  source             = "./modules/codebuild/project"
+  for_each           = toset(var.container_images)
+  service_role_arn   = module.codebuild_role.arn
+  account_id         = data.aws_caller_identity.current.id
+  region             = var.aws_region
+  dockerhub_username = var.dockerhub_username
+  dockerhub_password = var.dockerhub_password
+  image_name         = each.key
 }
 
 module "codepipeline" {
-  source             = "./CodePipeline"
-  github_repo_id     = "MxGutierrez/terraform-sample"
-  github_branch_name = "master"
-  ecs_cluster_id     = module.ecs_cluster.id
-  # images = [for image in container_images : {
-  #   name                 = image
-  #   codebuild_project_id = module.codebuilds[image]
-  #   ecs_service_id       = module.ecs_services[image]
-  # }]
+  source              = "./modules/codepipeline"
+  github_repo_id      = "MxGutierrez/terraform-sample"
+  github_branch_name  = "master"
+  ecs_cluster_id      = module.ecs_cluster.id
+  artifact_bucket_arn = aws_s3_bucket.codepipeline_artifacts.arn
+  artifact_bucket_id  = aws_s3_bucket.codepipeline_artifacts.id
+  images = {for image in var.container_images : image => {
+    name                 = image
+    codebuild_project_id = module.codebuilds[image].id
+    ecs_service_id       = module.ecs_services[image].id
+  }}
 
-  images = [{
-    name                 = "frontend"
-    codebuild_project_id = module.codebuilds["frontend"]
-    ecs_service_id       = module.ecs_services["frontend"]
-  }]
+  # images = {
+  #   frontend = {
+  #     codebuild_project_id = module.codebuilds["frontend"].id
+  #     ecs_service_id       = module.ecs_services["frontend"].id
+  #   }
+  # }
 }
