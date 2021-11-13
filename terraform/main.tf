@@ -1,23 +1,23 @@
 data "aws_caller_identity" "current" {}
 
 module "networking" {
-  source       = "./Networking"
+  source       = "./modules/networking"
   vpc_cidr     = "10.0.0.0/24"
   public_cidrs = ["10.0.0.0/25", "10.0.0.128/25"]
 }
 
 module "ecrs" {
-  source     = "./ECR"
+  source     = "./modules/ecr"
   for_each   = toset(var.container_images)
   image_name = each.key
 }
 
 module "ecs_cluster" {
-  source = "./ECS/Cluster"
+  source = "./modules/ecs/cluster"
 }
 
 module "ecs_autoscaling" {
-  source           = "./ECS/Autoscaling"
+  source           = "./modules/ecs/autoscaling"
   vpc_id           = module.networking.vpc_id
   subnet_ids       = module.networking.public_subnets_ids
   ecs_cluster_name = module.ecs_cluster.id
@@ -25,7 +25,7 @@ module "ecs_autoscaling" {
 }
 
 module "ecs_task_definitions" {
-  source                     = "./ECS/TaskDefinition"
+  source                     = "./modules/ecs/task-definition"
   for_each                   = toset(var.container_images)
   task_name                  = each.key
   execution_role_arn         = module.ecs_cluster.task_execution_role_arn
@@ -34,7 +34,7 @@ module "ecs_task_definitions" {
 }
 
 module "ecs_services" {
-  source              = "./ECS/Service"
+  source              = "./modules/ecs/service"
   for_each            = toset(var.container_images)
   name                = each.key
   cluster_id          = module.ecs_cluster.id
@@ -52,12 +52,12 @@ resource "aws_s3_bucket" "codepipeline_artifacts" {
 }
 
 module "codebuild_role" {
-  source              = "./CodeBuild/Role"
+  source              = "./modules/codebuild/role"
   artifact_bucket_arn = aws_s3_bucket.codepipeline_artifacts.arn
 }
 
 module "codebuilds" {
-  source              = "./CodeBuild"
+  source              = "./modules/codebuild"
   for_each            = toset(var.container_images)
   artifact_bucket_arn = aws_s3_bucket.codepipeline_artifacts.arn
   service_role_arn    = module.codebuild_role.arn
