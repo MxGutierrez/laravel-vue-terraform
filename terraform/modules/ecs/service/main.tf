@@ -2,7 +2,7 @@ resource "aws_ecs_service" "service" {
   name                               = var.name
   cluster                            = var.cluster_id
   task_definition                    = var.task_definition_arn
-  deployment_minimum_healthy_percent = floor(var.desired_count / 2)
+  deployment_minimum_healthy_percent = (floor(var.desired_count / 2) / var.desired_count) * 100 # Set minimum to desired_count / 2
   desired_count                      = var.desired_count
 
   load_balancer {
