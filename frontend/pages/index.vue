@@ -1,5 +1,5 @@
 <template>
-  <Tutorial :message="'TEST4'" />
+  <Tutorial :message="'TEST5'" />
 </template>
 
 <script lang="ts">
