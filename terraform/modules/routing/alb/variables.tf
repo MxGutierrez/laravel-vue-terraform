@@ -14,3 +14,7 @@ variable "ecs_cluster_name" {
 variable "subnet_ids" {
   type = list(string)
 }
+
+variable "target_group_arns" {
+  type = list(string)
+}

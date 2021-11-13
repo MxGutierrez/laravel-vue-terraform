@@ -16,14 +16,6 @@ module "ecs_cluster" {
   source = "./modules/ecs/cluster"
 }
 
-module "ecs_autoscaling" {
-  source           = "./modules/ecs/autoscaling"
-  vpc_id           = module.networking.vpc_id
-  subnet_ids       = module.networking.public_subnets_ids
-  ecs_cluster_name = module.ecs_cluster.id
-  instance_type    = "t2.micro"
-}
-
 module "ecs_task_definitions" {
   source                     = "./modules/ecs/task-definition"
   for_each                   = toset(var.container_images)
@@ -33,12 +25,31 @@ module "ecs_task_definitions" {
   ecr_repository_url         = module.ecrs[each.key].repository_url
 }
 
+module "target_groups" {
+  for_each    = toset(var.container_images)
+  source      = "./modules/routing/target-group"
+  vpc_id      = module.networking.vpc_id
+  target_port = 3000
+}
+
 module "ecs_services" {
   source              = "./modules/ecs/service"
   for_each            = toset(var.container_images)
   name                = each.key
   cluster_id          = module.ecs_cluster.id
   task_definition_arn = module.ecs_task_definitions[each.key].arn
+  target_group_arn    = module.target_groups[each.key].arn
+  container_port      = 3000
+  desired_count       = 2
+}
+
+module "alb" {
+  source            = "./modules/routing/alb"
+  vpc_id            = module.networking.vpc_id
+  instance_type     = "t2.micro"
+  subnet_ids        = module.networking.public_subnets_ids
+  ecs_cluster_name  = module.ecs_cluster.id
+  target_group_arns = [for target_group in module.target_groups : target_group.arn]
 }
 
 resource "aws_s3_bucket" "codepipeline_artifacts" {
@@ -80,3 +91,4 @@ module "codepipeline" {
     ecs_service_id       = module.ecs_services[image].id
   } }
 }
+

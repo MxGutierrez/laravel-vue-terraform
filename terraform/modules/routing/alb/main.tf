@@ -34,20 +34,61 @@ data "aws_ami" "amazon_2" {
   owners = ["amazon"]
 }
 
-resource "aws_security_group" "ecs_sg" {
-  name   = "ecs-sg"
+resource "aws_security_group" "instance" {
+  name   = "ecs-instances-sg"
   vpc_id = var.vpc_id
 
   ingress {
-    from_port   = 22
-    to_port     = 22
+    from_port       = 0
+    to_port         = 65535
+    protocol        = "tcp"
+    cidr_blocks     = ["0.0.0.0/0"]
+    security_groups = [aws_security_group.alb.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  tags = {
+    Name = "allow-traffic-from-alb"
+  }
+}
+
+resource "aws_launch_configuration" "ecs_launch_config" {
+  image_id             = "ami-078cbb92727dec530"
+  iam_instance_profile = aws_iam_instance_profile.ecs_agent.name
+  security_groups      = [aws_security_group.instance.id]
+  user_data            = "#!/bin/bash\necho ECS_CLUSTER=${var.ecs_cluster_name} >> /etc/ecs/ecs.config"
+  instance_type        = var.instance_type
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_autoscaling_group" "ag" {
+  name                 = "asg"
+  vpc_zone_identifier  = var.subnet_ids
+  launch_configuration = aws_launch_configuration.ecs_launch_config.name
+
+  desired_capacity          = 1
+  min_size                  = 1
+  max_size                  = 2
+  health_check_grace_period = 300
+  health_check_type         = "EC2"
+}
+
+resource "aws_security_group" "alb" {
+  name   = "alb-sg"
+  vpc_id = var.vpc_id
+
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = 0
+    to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -60,63 +101,44 @@ resource "aws_security_group" "ecs_sg" {
   }
 
   tags = {
-    Name = "allow_tls"
+    Name = "ALB-sg"
   }
 }
 
-resource "aws_key_pair" "ec2" {
-  key_name   = "deployer-key"
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCpe3kMBxVVLes8rgo/oJlQGW4ibbDjmxPDUEiPoSkhLwZA8iNzaDFY2kTCgXz8je2nk4bSwnkXLvB+8l8eTrzHLPDpaxDj86RdoSifYd80OUd7IdmG7ITn4LrnYKZ/i1meZTwdSk6AA93iFxQV0bRPuB1bhrJA+P0vq14dvXLJycUkqPZlxUtDAi5O6WbBbjgLJqcB7jrLMrFRh6EOi49/J+xPvQIdf+Dk2R8CjDuTpJwoTNK7a8Z6vGRkpFDAfH6OY+VnxU10EtcuysXQZBBLG4caFNxI7/vgNfOYYYDJuLNzrNsuH07/ADRrCb+ys48d9tUtL39FwWw4/LOyJQcd maximiliano@lightit-maximiliano-desktop"
-}
+resource "aws_lb" "alb" {
+  name               = "ecs-lb"
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = var.subnet_ids
 
-resource "aws_launch_configuration" "ecs_launch_config" {
-  image_id             = "ami-078cbb92727dec530"
-  iam_instance_profile = aws_iam_instance_profile.ecs_agent.name
-  key_name             = aws_key_pair.ec2.id
-  security_groups      = [aws_security_group.ecs_sg.id]
-  user_data            = "#!/bin/bash\necho ECS_CLUSTER=${var.ecs_cluster_name} >> /etc/ecs/ecs.config"
-  instance_type        = var.instance_type
-
-  lifecycle {
-    create_before_destroy = true
+  tags = {
+    Name = "tf-sample-alb"
   }
 }
 
-resource "aws_autoscaling_group" "failure_analysis_ecs_asg" {
-  name                 = "asg"
-  vpc_zone_identifier  = var.subnet_ids
-  launch_configuration = aws_launch_configuration.ecs_launch_config.name
-  # load_balancers = [aws_elb.ecs.id]
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 80
+  protocol          = "HTTP"
 
-  desired_capacity          = 1
-  min_size                  = 1
-  max_size                  = 2
-  health_check_grace_period = 300
-  health_check_type         = "EC2"
+  default_action {
+    type             = "forward"
+    target_group_arn = var.target_group_arns[0]
+  }
 }
 
-# resource "aws_lb_target_group" "codedeploy_production" {
-#   name     = "codedeploy_production"
-#   port     = 3000
-#   protocol = "HTTP"
-#   vpc_id   = aws_vpc.tf_vpc.id
-# }
+resource "aws_lb_listener_rule" "static" {
+  count        = length(var.target_group_arns)
+  listener_arn = aws_lb_listener.http.arn
 
+  action {
+    type             = "forward"
+    target_group_arn = var.target_group_arns[count.index]
+  }
 
-# resource "aws_elb" "ecs" {
-#   name               = "ecs-lb"
-#   availability_zones = [aws_subnet.public.availability_zone, aws_subnet.public2.availability_zone]
-
-#   listener {
-#     instance_port     = 3000
-#     instance_protocol = "http"
-#     lb_port           = 80
-#     lb_protocol       = "http"
-#   }
-
-#   cross_zone_load_balancing   = true
-
-#   tags = {
-#     Name = "foobar-terraform-elb"
-#   }
-# }
+  condition {
+    path_pattern {
+      values = ["/*"]
+    }
+  }
+}
