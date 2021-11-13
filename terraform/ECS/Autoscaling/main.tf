@@ -36,7 +36,7 @@ data "aws_ami" "amazon_2" {
 
 resource "aws_security_group" "ecs_sg" {
   name   = "ecs-sg"
-  vpc_id = aws_vpc.tf_vpc.id
+  vpc_id = var.vpc_id
 
   ingress {
     from_port   = 22
@@ -74,8 +74,8 @@ resource "aws_launch_configuration" "ecs_launch_config" {
   iam_instance_profile = aws_iam_instance_profile.ecs_agent.name
   key_name             = aws_key_pair.ec2.id
   security_groups      = [aws_security_group.ecs_sg.id]
-  user_data            = "#!/bin/bash\necho ECS_CLUSTER=${aws_ecs_cluster.cluster.name} >> /etc/ecs/ecs.config"
-  instance_type        = "t2.micro"
+  user_data            = "#!/bin/bash\necho ECS_CLUSTER=${var.ecs_cluster_name} >> /etc/ecs/ecs.config"
+  instance_type        = var.instance_type
 
   lifecycle {
     create_before_destroy = true
@@ -84,7 +84,7 @@ resource "aws_launch_configuration" "ecs_launch_config" {
 
 resource "aws_autoscaling_group" "failure_analysis_ecs_asg" {
   name                 = "asg"
-  vpc_zone_identifier  = [aws_subnet.public.id]
+  vpc_zone_identifier  = var.subnet_ids
   launch_configuration = aws_launch_configuration.ecs_launch_config.name
   # load_balancers = [aws_elb.ecs.id]
 
