@@ -74,16 +74,9 @@ module "codepipeline" {
   ecs_cluster_id      = module.ecs_cluster.id
   artifact_bucket_arn = aws_s3_bucket.codepipeline_artifacts.arn
   artifact_bucket_id  = aws_s3_bucket.codepipeline_artifacts.id
-  images = {for image in var.container_images : image => {
+  images = { for image in var.container_images : image => {
     name                 = image
     codebuild_project_id = module.codebuilds[image].id
     ecs_service_id       = module.ecs_services[image].id
-  }}
-
-  # images = {
-  #   frontend = {
-  #     codebuild_project_id = module.codebuilds["frontend"].id
-  #     ecs_service_id       = module.ecs_services["frontend"].id
-  #   }
-  # }
+  } }
 }
