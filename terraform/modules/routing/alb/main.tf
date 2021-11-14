@@ -106,7 +106,7 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_lb" "alb" {
-  name               = "ecs-lb"
+  name               = "tf-sample-alb"
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
   subnets            = var.subnet_ids
