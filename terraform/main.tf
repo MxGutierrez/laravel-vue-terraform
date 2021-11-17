@@ -35,6 +35,7 @@ module "target_groups" {
 module "ecs_services" {
   source              = "./modules/ecs/service"
   for_each            = toset(var.container_images)
+  depends_on          = [module.alb]
   name                = each.key
   cluster_id          = module.ecs_cluster.id
   task_definition_arn = module.ecs_task_definitions[each.key].arn
@@ -70,12 +71,13 @@ module "codebuild_role" {
 module "codebuilds" {
   source             = "./modules/codebuild/project"
   for_each           = toset(var.container_images)
+  image_name         = each.key
+  repository_url     = module.ecrs[each.key].repository_url
   service_role_arn   = module.codebuild_role.arn
   account_id         = data.aws_caller_identity.current.id
   region             = var.aws_region
   dockerhub_username = var.dockerhub_username
   dockerhub_password = var.dockerhub_password
-  image_name         = each.key
 }
 
 module "codepipeline" {

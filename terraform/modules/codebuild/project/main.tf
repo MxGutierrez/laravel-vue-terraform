@@ -44,8 +44,8 @@ resource "aws_codebuild_project" "codebuild" {
     }
 
     environment_variable {
-      name  = "IMAGE_NAME"
-      value = var.image_name
+      name  = "CONTAINER_REPOSITORY_URL"
+      value = var.repository_url
     }
   }
 }

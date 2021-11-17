@@ -21,3 +21,7 @@ variable "dockerhub_password" {
 variable "image_name" {
   type = string
 }
+
+variable "repository_url" {
+  type = string
+}

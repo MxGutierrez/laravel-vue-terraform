@@ -2,24 +2,28 @@ version: 0.2
 phases:
   pre_build:
     commands:
+      - echo $CONTAINER_REPOSITORY_URL
       - echo Logging in to DockerHub...
       # Dockerhub login increases dockerhub's image pull rate limiting
       # See https://www.docker.com/increase-rate-limits#:~:text=Understanding%20Docker%20Hub%20Rate%20Limiting&text=Anonymous%20and%20Free%20Docker%20Hub,pull%20requests%20per%20six%20hours.
       - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      # || true avoids errors if the image hasn't been pushed before
+      - docker pull $CONTAINER_REPOSITORY_URL:latest || true
+      - GIT_SHA=$CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo $GIT_SHA
   build: 
     commands:
-      - echo Build started on `date`
       - echo Building the Docker images...  
-      - docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION ./frontend
-      - docker tag $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:latest
+      - docker build --cache-from $CONTAINER_REPOSITORY_URL:latest -t $CONTAINER_REPOSITORY_URL:$GIT_SHA ./frontend
+      - docker tag $CONTAINER_REPOSITORY_URL:$GIT_SHA $CONTAINER_REPOSITORY_URL:latest
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION
-      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:latest
-      - printf '[{"name":"%s","imageUri":"%s"}]' frontend $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$IMAGE_NAME:$CODEBUILD_RESOLVED_SOURCE_VERSION > imagedefinitions.json
+      - docker push $CONTAINER_REPOSITORY_URL:$GIT_SHA
+      - docker push $CONTAINER_REPOSITORY_URL:latest
+      - printf '[{"name":"%s","imageUri":"%s"}]' frontend $CONTAINER_REPOSITORY_URL:$GIT_SHA > imagedefinitions.json
 artifacts:
   files: imagedefinitions.json

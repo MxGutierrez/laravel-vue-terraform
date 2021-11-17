@@ -28,8 +28,13 @@ resource "aws_route" "route" {
   gateway_id             = aws_internet_gateway.gw.id
 }
 
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
 resource "aws_subnet" "public_subnets" {
   count                   = length(var.public_cidrs)
+  availability_zone       = data.aws_availability_zones.available.names[count.index]
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = var.public_cidrs[count.index]
   map_public_ip_on_launch = true
