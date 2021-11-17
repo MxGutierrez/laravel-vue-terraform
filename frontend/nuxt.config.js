@@ -35,18 +35,18 @@ export default {
   modules: ["@nuxtjs/axios"],
 
   axios: {
-    baseURL: "http://localhost/api" // Used as fallback if no runtime config is provided
+    baseURL: process.env.API_BASE_URL// Used as fallback if no runtime config is provided
   },
 
   publicRuntimeConfig: {
     axios: {
-      browserBaseURL: "http://localhost/api"
+      browserBaseURL: process.env.API_BASE_URL
     }
   },
 
   privateRuntimeConfig: {
     axios: {
-      baseURL: "http://backend:8000"
+      baseURL: process.env.API_SSR_URL
     }
   },
 

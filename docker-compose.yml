@@ -4,11 +4,14 @@ services:
     backend:
         build: 
             context: ./backend
+            dockerfile: Dockerfile.dev
         volumes:
-            - ./backend/:/app
-        ports: 
-            - 8000:8000
+            - ./backend/:/var/www
+        expose: 
+            - 9000
         tty: true
+        networks:
+            - tfsample
 
     postgresql:
         image: postgres:latest
@@ -20,25 +23,42 @@ services:
             - POSTGRES_DB=tf_sample
             - POSTGRES_USER=root
             - POSTGRES_PASSWORD=1234
+        networks:
+            - tfsample
 
     nginx:
-        image: nginx:1.19.8-alpine
+        build:
+            context: .
+            dockerfile: ./nginx/Dockerfile
+        depends_on:
+            - backend
         restart: unless-stopped
         tty: true
         ports: 
-            - 80:80
+            - 8000:80
         volumes: 
-            - ./backend/:/var/www/
-            - ./nginx:/etc/nginx/conf.d
+            - ./backend/public/:/var/www/public
+            - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+        networks:
+            - tfsample
     
     frontend:
         build:
-            dockerfile: Dockerfile.dev
             context: ./frontend
+            dockerfile: Dockerfile.dev
         volumes:
-        - ./frontend:/app
-        - /app/node_modules
-        - /app/.nuxt
+            - ./frontend:/app
+            - /app/node_modules
+            - /app/.nuxt
+        ports:
+            - 3000:3000
+        networks:
+            - tfsample
+
 volumes:
     postgresql:
         driver: local
+
+networks:
+    tfsample:
+        driver: bridge

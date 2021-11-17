@@ -1,6 +1,6 @@
 FROM php:8.0.5-fpm-alpine
 
-WORKDIR /app
+WORKDIR /var/www
 
 RUN set -ex \
 	&& apk --no-cache add postgresql-libs postgresql-dev \
@@ -8,17 +8,24 @@ RUN set -ex \
 	&& apk del postgresql-dev
 
 RUN curl -sS https://getcomposer.org/installer​ | php -- \
-     --install-dir=/usr/local/bin --filename=composer
+	--install-dir=/usr/local/bin --filename=composer
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-COPY . .
+# https://www.digitalocean.com/community/tutorials/how-to-set-up-laravel-nginx-and-mysql-with-docker-compose
 
-# https://github.com/aschmelyun/docker-compose-laravel/issues/49
-RUN apk add shadow && usermod -u 1000 www-data && groupmod -g 1000 www-data
+COPY --chown=www-data:www-data . .
 
-RUN composer install
+# https://laravel.com/docs/master/deployment#autoloader-optimization
+RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-EXPOSE 8000
+# Optimizing Configuration loading
+RUN php artisan config:cache
+# Optimizing Route loading
+RUN php artisan route:cache
+# Optimizing View loading
+RUN php artisan view:cache
 
-CMD php artisan serve --host=0.0.0.0 --port=8000
+EXPOSE 9000
+
+CMD ["php-fpm"]
