@@ -2,7 +2,6 @@ version: 0.2
 phases:
   pre_build:
     commands:
-      - echo $CONTAINER_REPOSITORY_URL
       - echo Logging in to DockerHub...
       # Dockerhub login increases dockerhub's image pull rate limiting
       # See https://www.docker.com/increase-rate-limits#:~:text=Understanding%20Docker%20Hub%20Rate%20Limiting&text=Anonymous%20and%20Free%20Docker%20Hub,pull%20requests%20per%20six%20hours.
@@ -12,7 +11,6 @@ phases:
       # || true avoids errors if the image hasn't been pushed before
       - docker pull $CONTAINER_REPOSITORY_URL:latest || true
       - GIT_SHA=$CODEBUILD_RESOLVED_SOURCE_VERSION
-      - echo $GIT_SHA
   build: 
     commands:
       - echo Building the Docker images...  
