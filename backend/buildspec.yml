@@ -9,24 +9,24 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
       # || true avoids errors if the image hasn't been pushed before
-      - docker pull $BACKEND_CONTAINER_REPOSITORY_URL:latest || true
-      - docker pull $NGINX_CONTAINER_REPOSITORY_URL:latest || true
+      - docker pull $BACKEND_REPOSITORY_URL:latest || true
+      - docker pull $NGINX_REPOSITORY_URL:latest || true
       - GIT_SHA=$CODEBUILD_RESOLVED_SOURCE_VERSION
   build: 
     commands:
       - echo Building the Docker images...  
-      - docker build --cache-from $BACKEND_CONTAINER_REPOSITORY_URL:latest -t $BACKEND_CONTAINER_REPOSITORY_URL:$GIT_SHA ./backend
-      - docker build --cache-from $NGINX_CONTAINER_REPOSITORY_URL:latest -t $NGINX_CONTAINER_REPOSITORY_URL:$GIT_SHA ./nginx
-      - docker tag $BACKEND_CONTAINER_REPOSITORY_URL:$GIT_SHA $BACKEND_CONTAINER_REPOSITORY_URL:latest
-      - docker tag $NGINX_CONTAINER_REPOSITORY_URL:$GIT_SHA $NGINX_CONTAINER_REPOSITORY_URL:latest
+      - docker build --cache-from $BACKEND_REPOSITORY_URL:latest -t $BACKEND_REPOSITORY_URL:$GIT_SHA ./backend
+      - docker build --cache-from $NGINX_REPOSITORY_URL:latest -t $NGINX_REPOSITORY_URL:$GIT_SHA ./nginx
+      - docker tag $BACKEND_REPOSITORY_URL:$GIT_SHA $BACKEND_REPOSITORY_URL:latest
+      - docker tag $NGINX_REPOSITORY_URL:$GIT_SHA $NGINX_REPOSITORY_URL:latest
   post_build:
     commands:
       - echo Build completed on `date`
       - echo Pushing the Docker image...
-      - docker push $BACKEND_CONTAINER_REPOSITORY_URL:$GIT_SHA
-      - docker push $BACKEND_CONTAINER_REPOSITORY_URL:latest
-      - docker push $NGINX_CONTAINER_REPOSITORY_URL:$GIT_SHA
-      - docker push $NGINX_CONTAINER_REPOSITORY_URL:latest
-      - printf '[{"name":"%s","imageUri":"%s"}, {"name":"%s","imageUri":"%s"}]' backend $BACKEND_CONTAINER_REPOSITORY_URL:$GIT_SHA nginx $NGINX_CONTAINER_REPOSITORY_URL:$GIT_SHA > imagedefinitions.json
+      - docker push $BACKEND_REPOSITORY_URL:$GIT_SHA
+      - docker push $BACKEND_REPOSITORY_URL:latest
+      - docker push $NGINX_REPOSITORY_URL:$GIT_SHA
+      - docker push $NGINX_REPOSITORY_URL:latest
+      - printf '[{"name":"%s","imageUri":"%s"}, {"name":"%s","imageUri":"%s"}]' backend $BACKEND_REPOSITORY_URL:$GIT_SHA nginx $NGINX_REPOSITORY_URL:$GIT_SHA > imagedefinitions.json
 artifacts:
   files: imagedefinitions.json

@@ -110,7 +110,7 @@ resource "aws_codebuild_project" "frontend" {
     }
 
     environment_variable {
-      name  = "CONTAINER_REPOSITORY_URL"
+      name  = "REPOSITORY_URL"
       value = aws_ecr_repository.frontend.repository_url
     }
   }
