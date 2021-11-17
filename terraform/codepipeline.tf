@@ -111,6 +111,19 @@ resource "aws_codepipeline" "pipeline" {
     name = "Build"
 
     action {
+      name             = "backend-build"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      input_artifacts  = ["source_output"]
+      output_artifacts = ["backend_build_output"]
+      version          = "1"
+
+      configuration = {
+        ProjectName = aws_codebuild_project.backend.id
+      }
+    }
+    action {
       name             = "frontend-build"
       category         = "Build"
       owner            = "AWS"
@@ -129,7 +142,23 @@ resource "aws_codepipeline" "pipeline" {
     name = "Deploy"
 
     action {
-      name     = "frontend_deploy"
+      name     = "backend-deploy"
+      category = "Deploy"
+      owner    = "AWS"
+      provider = "ECS"
+      version  = 1
+
+      configuration = {
+        ClusterName = aws_ecs_cluster.cluster.id
+        ServiceName = aws_ecs_service.backend.id
+        FileName    = "imagedefinitions.json"
+      }
+
+      input_artifacts = ["backend_build_output"]
+    }
+
+    action {
+      name     = "frontend-deploy"
       category = "Deploy"
       owner    = "AWS"
       provider = "ECS"

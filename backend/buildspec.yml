@@ -1,0 +1,32 @@
+version: 0.2
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to DockerHub...
+      # Dockerhub login increases dockerhub's image pull rate limiting
+      # See https://www.docker.com/increase-rate-limits#:~:text=Understanding%20Docker%20Hub%20Rate%20Limiting&text=Anonymous%20and%20Free%20Docker%20Hub,pull%20requests%20per%20six%20hours.
+      - echo $DOCKERHUB_PASSWORD | docker login --username $DOCKERHUB_USERNAME --password-stdin
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+      # || true avoids errors if the image hasn't been pushed before
+      - docker pull $BACKEND_CONTAINER_REPOSITORY_URL:latest || true
+      - docker pull $NGINX_CONTAINER_REPOSITORY_URL:latest || true
+      - GIT_SHA=$CODEBUILD_RESOLVED_SOURCE_VERSION
+  build: 
+    commands:
+      - echo Building the Docker images...  
+      - docker build --cache-from $BACKEND_CONTAINER_REPOSITORY_URL:latest -t $BACKEND_CONTAINER_REPOSITORY_URL:$GIT_SHA ./backend
+      - docker build --cache-from $NGINX_CONTAINER_REPOSITORY_URL:latest -t $NGINX_CONTAINER_REPOSITORY_URL:$GIT_SHA ./nginx
+      - docker tag $BACKEND_CONTAINER_REPOSITORY_URL:$GIT_SHA $BACKEND_CONTAINER_REPOSITORY_URL:latest
+      - docker tag $NGINX_CONTAINER_REPOSITORY_URL:$GIT_SHA $NGINX_CONTAINER_REPOSITORY_URL:latest
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing the Docker image...
+      - docker push $BACKEND_CONTAINER_REPOSITORY_URL:$GIT_SHA
+      - docker push $BACKEND_CONTAINER_REPOSITORY_URL:latest
+      - docker push $NGINX_CONTAINER_REPOSITORY_URL:$GIT_SHA
+      - docker push $NGINX_CONTAINER_REPOSITORY_URL:latest
+      - printf '[{"name":"%s","imageUri":"%s"}, {"name":"%s","imageUri":"%s"}]' backend $BACKEND_CONTAINER_REPOSITORY_URL:$GIT_SHA nginx $NGINX_CONTAINER_REPOSITORY_URL:$GIT_SHA > imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json
