@@ -3,7 +3,7 @@
     "name": "frontend",
     "image": "${IMAGE_PATH}",
     "cpu": 10,
-    "memory": 300,
+    "memory": 100,
     "essential": true,
     "portMappings": [
       {

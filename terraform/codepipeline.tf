@@ -1,3 +1,13 @@
+resource "aws_s3_bucket" "codepipeline_artifacts" {
+  bucket        = "tf-sample-codepipeline-artifacts"
+  acl           = "private"
+  force_destroy = true
+
+  tags = {
+    Name = "Terraform-sample-codepipeline-artifacts"
+  }
+}
+
 resource "aws_codestarconnections_connection" "github_app" {
   name          = "github-connection"
   provider_type = "GitHub"
@@ -40,8 +50,8 @@ resource "aws_iam_role_policy" "codepipeline_policy" {
         "s3:PutObject"
       ],
       "Resource": [
-        "${var.artifact_bucket_arn}",
-        "${var.artifact_bucket_arn}/*"
+        "${aws_s3_bucket.codepipeline_artifacts.arn}",
+        "${aws_s3_bucket.codepipeline_artifacts.arn}/*"
       ]
     },
     {
@@ -74,7 +84,7 @@ resource "aws_codepipeline" "pipeline" {
   role_arn = aws_iam_role.codepipeline.arn
 
   artifact_store {
-    location = var.artifact_bucket_id
+    location = aws_s3_bucket.codepipeline_artifacts.id
     type     = "S3"
   }
 
@@ -91,8 +101,8 @@ resource "aws_codepipeline" "pipeline" {
 
       configuration = {
         ConnectionArn    = aws_codestarconnections_connection.github_app.arn
-        FullRepositoryId = var.github_repo_id
-        BranchName       = var.github_branch_name
+        FullRepositoryId = var.github_repo
+        BranchName       = var.github_branch
       }
     }
   }
@@ -100,20 +110,17 @@ resource "aws_codepipeline" "pipeline" {
   stage {
     name = "Build"
 
-    dynamic "action" {
-      for_each = var.images
-      content {
-        name             = "Build-${action.key}"
-        category         = "Build"
-        owner            = "AWS"
-        provider         = "CodeBuild"
-        input_artifacts  = ["source_output"]
-        output_artifacts = ["${action.key}_build_output"]
-        version          = "1"
+    action {
+      name             = "frontend-build"
+      category         = "Build"
+      owner            = "AWS"
+      provider         = "CodeBuild"
+      input_artifacts  = ["source_output"]
+      output_artifacts = ["frontend_build_output"]
+      version          = "1"
 
-        configuration = {
-          ProjectName = action.value.codebuild_project_id
-        }
+      configuration = {
+        ProjectName = aws_codebuild_project.frontend.id
       }
     }
   }
@@ -121,24 +128,20 @@ resource "aws_codepipeline" "pipeline" {
   stage {
     name = "Deploy"
 
-    dynamic "action" {
-      for_each = var.images
-      content {
+    action {
+      name     = "frontend_deploy"
+      category = "Deploy"
+      owner    = "AWS"
+      provider = "ECS"
+      version  = 1
 
-        name     = "Deploy-${action.key}"
-        category = "Deploy"
-        owner    = "AWS"
-        provider = "ECS"
-        version  = 1
-
-        configuration = {
-          ClusterName = var.ecs_cluster_id
-          ServiceName = action.value.ecs_service_id
-          FileName    = "imagedefinitions.json"
-        }
-
-        input_artifacts = ["${action.key}_build_output"]
+      configuration = {
+        ClusterName = aws_ecs_cluster.cluster.id
+        ServiceName = aws_ecs_service.frontend.id
+        FileName    = "imagedefinitions.json"
       }
+
+      input_artifacts = ["frontend_build_output"]
     }
   }
 }

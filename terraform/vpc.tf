@@ -1,5 +1,10 @@
+locals {
+  vpc_cidr            = "10.0.0.0/24"
+  public_subnet_cidrs = ["10.0.0.0/25", "10.0.0.128/25"]
+}
+
 resource "aws_vpc" "vpc" {
-  cidr_block = var.vpc_cidr
+  cidr_block = local.vpc_cidr
 
   tags = {
     Name = "tf-sample-vpc"
@@ -33,10 +38,10 @@ data "aws_availability_zones" "available" {
 }
 
 resource "aws_subnet" "public_subnets" {
-  count                   = length(var.public_cidrs)
+  count                   = length(local.public_subnet_cidrs)
   availability_zone       = data.aws_availability_zones.available.names[count.index]
   vpc_id                  = aws_vpc.vpc.id
-  cidr_block              = var.public_cidrs[count.index]
+  cidr_block              = local.public_subnet_cidrs[count.index]
   map_public_ip_on_launch = true
 
   tags = {

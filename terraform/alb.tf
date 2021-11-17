@@ -24,25 +24,14 @@ resource "aws_iam_instance_profile" "ecs_agent" {
   role = aws_iam_role.ecs_agent.name
 }
 
-data "aws_ami" "amazon_2" {
-  most_recent = true
-
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-ebs"]
-  }
-  owners = ["amazon"]
-}
-
 resource "aws_security_group" "instance" {
   name   = "ecs-instances-sg"
-  vpc_id = var.vpc_id
+  vpc_id = aws_vpc.vpc.id
 
   ingress {
     from_port       = 0
     to_port         = 65535
     protocol        = "tcp"
-    cidr_blocks     = ["0.0.0.0/0"]
     security_groups = [aws_security_group.alb.id]
   }
 
@@ -62,17 +51,13 @@ resource "aws_launch_configuration" "ecs_launch_config" {
   image_id             = "ami-078cbb92727dec530"
   iam_instance_profile = aws_iam_instance_profile.ecs_agent.name
   security_groups      = [aws_security_group.instance.id]
-  user_data            = "#!/bin/bash\necho ECS_CLUSTER=${var.ecs_cluster_name} >> /etc/ecs/ecs.config"
-  instance_type        = var.instance_type
-
-  lifecycle {
-    create_before_destroy = true
-  }
+  user_data            = "#!/bin/bash\necho ECS_CLUSTER=${aws_ecs_cluster.cluster.name} >> /etc/ecs/ecs.config"
+  instance_type        = "t2.micro"
 }
 
 resource "aws_autoscaling_group" "ag" {
   name                 = "asg"
-  vpc_zone_identifier  = var.subnet_ids
+  vpc_zone_identifier  = aws_subnet.public_subnets[*].id
   launch_configuration = aws_launch_configuration.ecs_launch_config.name
 
   desired_capacity          = 1
@@ -83,8 +68,8 @@ resource "aws_autoscaling_group" "ag" {
 }
 
 resource "aws_security_group" "alb" {
-  name   = "alb-sg"
-  vpc_id = var.vpc_id
+  name = "alb-sg"
+  vpc_id = aws_vpc.vpc.id
 
   ingress {
     from_port   = 0
@@ -109,7 +94,7 @@ resource "aws_lb" "alb" {
   name               = "tf-sample-alb"
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
-  subnets            = var.subnet_ids
+  subnets            = aws_subnet.public_subnets[*].id
 
   tags = {
     Name = "tf-sample-alb"
@@ -123,22 +108,6 @@ resource "aws_lb_listener" "http" {
 
   default_action {
     type             = "forward"
-    target_group_arn = var.target_group_arns[0]
-  }
-}
-
-resource "aws_lb_listener_rule" "static" {
-  count        = length(var.target_group_arns)
-  listener_arn = aws_lb_listener.http.arn
-
-  action {
-    type             = "forward"
-    target_group_arn = var.target_group_arns[count.index]
-  }
-
-  condition {
-    path_pattern {
-      values = ["/*"]
-    }
+    target_group_arn = aws_alb_target_group.frontend.arn
   }
 }
