@@ -16,7 +16,7 @@ phases:
     commands:
       - echo Building the Docker images...  
       - docker build --cache-from $BACKEND_REPOSITORY_URL:latest -t $BACKEND_REPOSITORY_URL:$GIT_SHA ./backend
-      - docker build --cache-from $NGINX_REPOSITORY_URL:latest -t $NGINX_REPOSITORY_URL:$GIT_SHA ./nginx
+      - docker build --cache-from $NGINX_REPOSITORY_URL:latest -t $NGINX_REPOSITORY_URL:$GIT_SHA -f ./nginx/Dockerfile .
       - docker tag $BACKEND_REPOSITORY_URL:$GIT_SHA $BACKEND_REPOSITORY_URL:latest
       - docker tag $NGINX_REPOSITORY_URL:$GIT_SHA $NGINX_REPOSITORY_URL:latest
   post_build:
