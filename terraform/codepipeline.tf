@@ -117,7 +117,7 @@ resource "aws_codepipeline" "pipeline" {
       provider         = "CodeBuild"
       input_artifacts  = ["source_output"]
       output_artifacts = ["backend_build_output"]
-      version          = "1"
+      version          = 1
 
       configuration = {
         ProjectName = aws_codebuild_project.backend.id
@@ -130,7 +130,7 @@ resource "aws_codepipeline" "pipeline" {
       provider         = "CodeBuild"
       input_artifacts  = ["source_output"]
       output_artifacts = ["frontend_build_output"]
-      version          = "1"
+      version          = 1
 
       configuration = {
         ProjectName = aws_codebuild_project.frontend.id

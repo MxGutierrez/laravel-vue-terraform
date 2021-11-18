@@ -2,11 +2,22 @@
   <Tutorial :message="message" />
 </template>
 
-<script lang="ts">
+<script>
 import { Context } from '@nuxt/types';
 
 export default {
-  async asyncData({ $axios } : Context) {
+  // async mounted() {
+  //   try{
+  //     const { data } = await this.$axios.get('/test');
+  //     this.message = data;
+  //   } catch (ex) {
+  //     console.log(ex);
+  //   }
+  // },
+  // data: () => ({
+  //   message: ''
+  // })
+  async asyncData({ $axios }) {
     try {
       const { data } = await $axios.get('/test');
       return {

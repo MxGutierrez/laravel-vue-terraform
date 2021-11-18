@@ -20,7 +20,7 @@ resource "aws_ecs_service" "backend" {
   name                               = "backend"
   cluster                            = aws_ecs_cluster.cluster.id
   task_definition                    = aws_ecs_task_definition.backend.arn
-  deployment_minimum_healthy_percent = 1
+  deployment_minimum_healthy_percent = 50
   desired_count                      = 2
 
   load_balancer {
@@ -49,13 +49,14 @@ resource "aws_alb_target_group" "backend" {
     protocol            = "HTTP"
     matcher             = 200
     timeout             = 3
-    path                = "/"
+    path                = "/api/test"
     unhealthy_threshold = 2
   }
 }
 
 resource "aws_lb_listener_rule" "backend" {
   listener_arn = aws_lb_listener.http.arn
+  priority     = 1
 
   action {
     type             = "forward"
