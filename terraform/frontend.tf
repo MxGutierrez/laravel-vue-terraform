@@ -3,23 +3,57 @@ resource "aws_ecr_repository" "frontend" {
 }
 
 resource "aws_ecs_task_definition" "frontend" {
-  family             = "frontend"
-  execution_role_arn = aws_iam_role.task_execution_role.arn
-  network_mode       = "awsvpc"
+  family                   = "frontend"
+  execution_role_arn       = aws_iam_role.task_execution_role.arn
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+
+  cpu    = 256
+  memory = 512
 
   container_definitions = templatefile("${abspath(path.root)}/../frontend/taskdef.json", {
     IMAGE_PATH   = aws_ecr_repository.frontend.repository_url
     API_BASE_URL = "${aws_lb.alb.dns_name}/api"
-    API_SSR_URL  = "http://backend.sample.tf/api"
+    API_SSR_URL  = "http://${aws_service_discovery_service.backend.name}.${aws_service_discovery_private_dns_namespace.discovery.name}/api"
   })
+}
+
+resource "aws_security_group" "frontend_task" {
+  name   = "frontend-task-sg"
+  vpc_id = aws_vpc.vpc.id
+
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "frontend-task-sg"
+  }
 }
 
 resource "aws_ecs_service" "frontend" {
   name                               = "frontend"
   cluster                            = aws_ecs_cluster.cluster.id
   task_definition                    = aws_ecs_task_definition.frontend.arn
+  launch_type                        = "FARGATE"
   deployment_minimum_healthy_percent = 100
   desired_count                      = 1
+
+  network_configuration {
+    subnets          = aws_subnet.public_subnets[*].id
+    security_groups  = [aws_security_group.frontend_task.id]
+    assign_public_ip = true
+  }
 
   load_balancer {
     target_group_arn = aws_alb_target_group.frontend.arn

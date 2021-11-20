@@ -8,7 +8,7 @@
     "portMappings": [
       {
         "containerPort": 3000,
-        "hostPort": 0
+        "hostPort": 3000
       }
     ],
     "environment": [
@@ -20,7 +20,6 @@
         "name": "API_SSR_URL",
         "value": "${API_SSR_URL}"
       }
-    ],
-    "compatibilities": ["FARGATE"]
+    ]
   }
 ]

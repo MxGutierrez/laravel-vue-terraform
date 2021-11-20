@@ -7,9 +7,15 @@ resource "aws_ecr_repository" "nginx" {
 }
 
 resource "aws_ecs_task_definition" "backend" {
-  family             = "backend"
-  execution_role_arn = aws_iam_role.task_execution_role.arn
-  network_mode       = "awsvpc"
+  family                   = "backend"
+  execution_role_arn       = aws_iam_role.task_execution_role.arn
+  requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
+
+  # Fargate has specific cpu and memory combinations
+  # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html#task_size
+  cpu    = 256
+  memory = 512
 
   container_definitions = templatefile("${abspath(path.root)}/../backend/taskdef.json", {
     BACKEND_IMAGE_PATH = aws_ecr_repository.backend.repository_url
@@ -31,12 +37,42 @@ resource "aws_service_discovery_service" "backend" {
   }
 }
 
+resource "aws_security_group" "backend_task" {
+  name   = "backend-task-sg"
+  vpc_id = aws_vpc.vpc.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 65535
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "backend-task-sg"
+  }
+}
+
 resource "aws_ecs_service" "backend" {
   name                               = "backend"
   cluster                            = aws_ecs_cluster.cluster.id
   task_definition                    = aws_ecs_task_definition.backend.arn
+  launch_type                        = "FARGATE"
   deployment_minimum_healthy_percent = 100
   desired_count                      = 1
+
+  network_configuration {
+    subnets          = aws_subnet.public_subnets[*].id
+    security_groups  = [aws_security_group.backend_task.id]
+    assign_public_ip = true
+  }
 
   load_balancer {
     target_group_arn = aws_alb_target_group.backend.arn

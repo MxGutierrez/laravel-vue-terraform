@@ -15,7 +15,7 @@
     "portMappings": [
       {
         "containerPort": 80,
-        "hostPort": 0
+        "hostPort": 80
       }
     ],
     "dependsOn": [
@@ -29,7 +29,6 @@
           "name": "BACKEND_URL",
           "value": "127.0.0.1"
         }
-      ],
-    "compatibilities": ["FARGATE"]
+      ]
   }
 ]

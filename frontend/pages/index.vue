@@ -19,7 +19,6 @@ export default {
   // })
   async asyncData({ $axios }) {
     try {
-      console.log({ baseUrl: process.env.API_BASE_URL, ssrUrl: process.env.API_SSR_URL});
       const { data } = await $axios.get('/test');
       return {
         message: data
