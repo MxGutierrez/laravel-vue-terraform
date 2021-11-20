@@ -68,7 +68,7 @@ resource "aws_autoscaling_group" "ag" {
 }
 
 resource "aws_security_group" "alb" {
-  name = "alb-sg"
+  name   = "alb-sg"
   vpc_id = aws_vpc.vpc.id
 
   ingress {

@@ -24,6 +24,12 @@
         "condition": "START"
       }
     ],
-    "links": ["backend"]
+    "environment": [
+        {
+          "name": "BACKEND_URL",
+          "value": "127.0.0.1"
+        }
+      ],
+    "compatibilities": ["FARGATE"]
   }
 ]

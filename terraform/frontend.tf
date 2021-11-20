@@ -5,9 +5,12 @@ resource "aws_ecr_repository" "frontend" {
 resource "aws_ecs_task_definition" "frontend" {
   family             = "frontend"
   execution_role_arn = aws_iam_role.task_execution_role.arn
+  network_mode       = "awsvpc"
 
   container_definitions = templatefile("${abspath(path.root)}/../frontend/taskdef.json", {
-    IMAGE_PATH = aws_ecr_repository.frontend.repository_url
+    IMAGE_PATH   = aws_ecr_repository.frontend.repository_url
+    API_BASE_URL = "${aws_lb.alb.dns_name}/api"
+    API_SSR_URL  = "http://backend.sample.tf/api"
   })
 }
 
@@ -15,8 +18,8 @@ resource "aws_ecs_service" "frontend" {
   name                               = "frontend"
   cluster                            = aws_ecs_cluster.cluster.id
   task_definition                    = aws_ecs_task_definition.frontend.arn
-  deployment_minimum_healthy_percent = 50
-  desired_count                      = 2
+  deployment_minimum_healthy_percent = 100
+  desired_count                      = 1
 
   load_balancer {
     target_group_arn = aws_alb_target_group.frontend.arn
@@ -36,7 +39,7 @@ resource "aws_alb_target_group" "frontend" {
   port        = 3000
   protocol    = "HTTP"
   vpc_id      = aws_vpc.vpc.id
-  target_type = "instance"
+  target_type = "ip"
 
   health_check {
     healthy_threshold   = 3

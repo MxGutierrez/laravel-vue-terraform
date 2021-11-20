@@ -38,7 +38,9 @@ services:
             - 8000:80
         volumes: 
             - ./backend/public/:/var/www/public
-            - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+            - ./nginx/templates/:/etc/nginx/templates/
+        environment:
+          - BACKEND_URL=backend
         networks:
             - tfsample
     

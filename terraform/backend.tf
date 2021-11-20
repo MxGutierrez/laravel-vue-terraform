@@ -9,6 +9,7 @@ resource "aws_ecr_repository" "nginx" {
 resource "aws_ecs_task_definition" "backend" {
   family             = "backend"
   execution_role_arn = aws_iam_role.task_execution_role.arn
+  network_mode       = "awsvpc"
 
   container_definitions = templatefile("${abspath(path.root)}/../backend/taskdef.json", {
     BACKEND_IMAGE_PATH = aws_ecr_repository.backend.repository_url
@@ -16,12 +17,26 @@ resource "aws_ecs_task_definition" "backend" {
   })
 }
 
+resource "aws_service_discovery_service" "backend" {
+  name = "backend"
+
+  dns_config {
+    namespace_id   = aws_service_discovery_private_dns_namespace.discovery.id
+    routing_policy = "MULTIVALUE"
+
+    dns_records {
+      ttl  = 15
+      type = "A"
+    }
+  }
+}
+
 resource "aws_ecs_service" "backend" {
   name                               = "backend"
   cluster                            = aws_ecs_cluster.cluster.id
   task_definition                    = aws_ecs_task_definition.backend.arn
-  deployment_minimum_healthy_percent = 50
-  desired_count                      = 2
+  deployment_minimum_healthy_percent = 100
+  desired_count                      = 1
 
   load_balancer {
     target_group_arn = aws_alb_target_group.backend.arn
@@ -33,6 +48,10 @@ resource "aws_ecs_service" "backend" {
     ignore_changes = [task_definition]
   }
 
+  service_registries {
+    registry_arn = aws_service_discovery_service.backend.arn
+  }
+
   depends_on = [aws_lb.alb]
 }
 
@@ -41,7 +60,7 @@ resource "aws_alb_target_group" "backend" {
   port        = 80
   protocol    = "HTTP"
   vpc_id      = aws_vpc.vpc.id
-  target_type = "instance"
+  target_type = "ip"
 
   health_check {
     healthy_threshold   = 3

@@ -10,6 +10,17 @@
         "containerPort": 3000,
         "hostPort": 0
       }
-    ]
+    ],
+    "environment": [
+      {
+        "name": "API_BASE_URL",
+        "value": "${API_BASE_URL}"
+      },
+      {
+        "name": "API_SSR_URL",
+        "value": "${API_SSR_URL}"
+      }
+    ],
+    "compatibilities": ["FARGATE"]
   }
 ]
