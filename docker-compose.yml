@@ -9,6 +9,13 @@ services:
             - ./backend/:/var/www
         expose: 
             - 9000
+        environment:
+            - DB_HOST=postgresql
+            - DB_CONNECTION=pgsql
+            - DB_PORT=5432
+            - DB_DATABASE=tf_sample
+            - DB_USERNAME=root
+            - DB_PASSWORD=1234
         tty: true
         networks:
             - tfsample

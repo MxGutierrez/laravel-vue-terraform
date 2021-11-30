@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,5 +20,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::get('/test', function () {
-    return 'Hello world';
+    try {
+        DB::connection()->getPdo();
+        return 'DB connected';
+    } catch (\Exception $e) {
+        return 'DB disconnected';
+    }
 });
