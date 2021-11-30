@@ -71,7 +71,6 @@ resource "aws_ecs_service" "backend" {
   network_configuration {
     subnets          = aws_subnet.private_subnets[*].id
     security_groups  = [aws_security_group.backend_task.id]
-    assign_public_ip = true
   }
 
   load_balancer {

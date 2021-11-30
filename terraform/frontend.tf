@@ -52,7 +52,6 @@ resource "aws_ecs_service" "frontend" {
   network_configuration {
     subnets          = aws_subnet.private_subnets[*].id
     security_groups  = [aws_security_group.frontend_task.id]
-    assign_public_ip = true
   }
 
   load_balancer {
