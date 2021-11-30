@@ -69,7 +69,7 @@ resource "aws_ecs_service" "backend" {
   desired_count                      = 1
 
   network_configuration {
-    subnets          = aws_subnet.public_subnets[*].id
+    subnets          = aws_subnet.private_subnets[*].id
     security_groups  = [aws_security_group.backend_task.id]
     assign_public_ip = true
   }
