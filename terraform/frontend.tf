@@ -50,8 +50,8 @@ resource "aws_ecs_service" "frontend" {
   desired_count                      = 1
 
   network_configuration {
-    subnets          = aws_subnet.private_subnets[*].id
-    security_groups  = [aws_security_group.frontend_task.id]
+    subnets         = aws_subnet.apps[*].id
+    security_groups = [aws_security_group.frontend_task.id]
   }
 
   load_balancer {

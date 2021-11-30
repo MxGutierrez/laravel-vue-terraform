@@ -69,8 +69,8 @@ resource "aws_ecs_service" "backend" {
   desired_count                      = 1
 
   network_configuration {
-    subnets          = aws_subnet.private_subnets[*].id
-    security_groups  = [aws_security_group.backend_task.id]
+    subnets         = aws_subnet.apps[*].id
+    security_groups = [aws_security_group.backend_task.id]
   }
 
   load_balancer {

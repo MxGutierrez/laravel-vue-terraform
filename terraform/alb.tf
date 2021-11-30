@@ -25,7 +25,7 @@ resource "aws_lb" "alb" {
   name               = "tf-sample-alb"
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
-  subnets            = aws_subnet.public_subnets[*].id
+  subnets            = aws_subnet.publics[*].id
 
   tags = {
     Name = "tf-sample-alb"
