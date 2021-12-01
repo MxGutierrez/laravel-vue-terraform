@@ -16,6 +16,8 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
 COPY --chown=www-data:www-data . .
 
+RUN chmod +x ./startup.sh
+
 # https://laravel.com/docs/master/deployment#autoloader-optimization
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
@@ -26,4 +28,4 @@ RUN php artisan view:cache
 
 EXPOSE 9000
 
-CMD ["php-fpm"]
+CMD ["./startup.sh"]
