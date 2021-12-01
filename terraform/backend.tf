@@ -20,6 +20,11 @@ resource "aws_ecs_task_definition" "backend" {
   container_definitions = templatefile("${abspath(path.root)}/../backend/taskdef.json", {
     BACKEND_IMAGE_PATH = aws_ecr_repository.backend.repository_url
     NGINX_IMAGE_PATH   = aws_ecr_repository.nginx.repository_url
+    DB_HOST            = aws_db_instance.db.address
+    DB_PORT            = aws_db_instance.db.port
+    DB_DATABASE        = aws_db_instance.db.name
+    DB_USERNAME        = aws_db_instance.db.username
+    DB_PASSWORD        = aws_db_instance.db.password
   })
 }
 
@@ -45,7 +50,7 @@ resource "aws_security_group" "backend_task" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    security_groups = [aws_security_group.alb.id, aws_security_group.frontend_task.id]
   }
 
   egress {

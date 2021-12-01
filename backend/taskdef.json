@@ -4,7 +4,33 @@
     "image": "${BACKEND_IMAGE_PATH}",
     "cpu": 100,
     "memory": 200,
-    "essential": true
+    "essential": true,
+    "environment": [
+      {
+        "name": "DB_HOST",
+        "value": "${DB_HOST}"
+      },
+      {
+        "name": "DB_CONNECTION",
+        "value": "pgsql"
+      },
+      {
+        "name": "DB_PORT",
+        "value": "${DB_PORT}"
+      },
+      {
+        "name": "DB_DATABASE",
+        "value": "${DB_DATABASE}"
+      },
+      {
+        "name": "DB_USERNAME",
+        "value": "${DB_USERNAME}"
+      },
+      {
+        "name": "DB_PASSWORD",
+        "value": "${DB_PASSWORD}"
+      }
+    ]
   },
   {
     "name": "nginx",
