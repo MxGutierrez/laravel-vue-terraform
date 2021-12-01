@@ -19,8 +19,6 @@ COPY --chown=www-data:www-data . .
 # https://laravel.com/docs/master/deployment#autoloader-optimization
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Optimizing Configuration loading
-RUN php artisan config:cache
 # Optimizing Route loading
 RUN php artisan route:cache
 # Optimizing View loading
