@@ -46,3 +46,16 @@ resource "aws_db_instance" "db" {
     Name = "tf-sample-db"
   }
 }
+
+resource "aws_secretsmanager_secret" "rds_secret" {
+  name                    = "tfsample/prod/postgres"
+  recovery_window_in_days = 0 # amount of days a secret is scheduled until real deletion
+}
+
+resource "aws_secretsmanager_secret_version" "rds_secret" {
+  secret_id = aws_secretsmanager_secret.rds_secret.id
+  secret_string = jsonencode({
+    username = aws_db_instance.db.username
+    password = aws_db_instance.db.password
+  })
+}

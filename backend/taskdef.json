@@ -21,14 +21,16 @@
       {
         "name": "DB_DATABASE",
         "value": "${DB_DATABASE}"
-      },
+      }
+    ],
+    "secrets": [
       {
         "name": "DB_USERNAME",
-        "value": "${DB_USERNAME}"
+        "valueFrom": "${DB_USERNAME}"
       },
       {
         "name": "DB_PASSWORD",
-        "value": "${DB_PASSWORD}"
+        "valueFrom": "${DB_PASSWORD}"
       }
     ]
   },

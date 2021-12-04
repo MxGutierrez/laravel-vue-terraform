@@ -2,9 +2,35 @@ resource "aws_ecr_repository" "frontend" {
   name = "frontend"
 }
 
+resource "aws_iam_role" "frontend_task_execution_role" {
+  name = "frontend-task-execution-role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "frontend_task_execution_policy_attachment" {
+  role       = aws_iam_role.frontend_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+
 resource "aws_ecs_task_definition" "frontend" {
   family                   = "frontend"
-  execution_role_arn       = aws_iam_role.task_execution_role.arn
+  execution_role_arn       = aws_iam_role.frontend_task_execution_role.arn
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
 
@@ -23,9 +49,9 @@ resource "aws_security_group" "frontend_task" {
   vpc_id = aws_vpc.vpc.id
 
   ingress {
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
+    from_port       = 3000
+    to_port         = 3000
+    protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
 

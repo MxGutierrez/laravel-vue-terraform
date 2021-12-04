@@ -6,9 +6,56 @@ resource "aws_ecr_repository" "nginx" {
   name = "nginx"
 }
 
+resource "aws_iam_role" "backend_task_execution_role" {
+  name = "backend-task-execution-role"
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "ecs-tasks.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+resource "aws_iam_role_policy_attachment" "backend_task_execution_policy_attachment" {
+  role       = aws_iam_role.backend_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+
+resource "aws_iam_role_policy" "backend_task_rds_secret_access" {
+  name = "backend-task-rds-secret-access"
+  role = aws_iam_role.backend_task_execution_role.id
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "secretsmanager:GetSecretValue"
+      ],
+      "Resource": [
+        "${aws_secretsmanager_secret.rds_secret.arn}*"
+      ]
+    }
+  ]
+}
+EOF
+}
+
 resource "aws_ecs_task_definition" "backend" {
   family                   = "backend"
-  execution_role_arn       = aws_iam_role.task_execution_role.arn
+  execution_role_arn       = aws_iam_role.backend_task_execution_role.arn
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
 
@@ -23,8 +70,8 @@ resource "aws_ecs_task_definition" "backend" {
     DB_HOST            = aws_db_instance.db.address
     DB_PORT            = aws_db_instance.db.port
     DB_DATABASE        = aws_db_instance.db.name
-    DB_USERNAME        = aws_db_instance.db.username
-    DB_PASSWORD        = aws_db_instance.db.password
+    DB_USERNAME        = "${aws_secretsmanager_secret.rds_secret.arn}:username::"
+    DB_PASSWORD        = "${aws_secretsmanager_secret.rds_secret.arn}:password::"
   })
 }
 
@@ -47,9 +94,9 @@ resource "aws_security_group" "backend_task" {
   vpc_id = aws_vpc.vpc.id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
     security_groups = [aws_security_group.alb.id, aws_security_group.frontend_task.id]
   }
 
