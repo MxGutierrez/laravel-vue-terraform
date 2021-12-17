@@ -20,3 +20,17 @@
 </div>
 
 # Terraform sample
+The scope for this project is to configure a containerized working environment for a fullstack nuxt-laravel app on AWS using terraform as IaC tool.
+
+## Arquitecture diagram
+
+## Set up
+
+## Costs
+A nice thing about ECS when compared to Kubernetes hosting on AWS using EKS is that ECS does't have a fixed cost for having a cluster running.
+
+https://calculator.aws/#/estimate?id=38773fa7a4cdfee5423039d579ecbb64049a619a
+
+## Next steps
+1) Add bastion host
+2) Add migration process
