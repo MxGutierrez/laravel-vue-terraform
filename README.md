@@ -23,6 +23,7 @@
 The scope for this project is to configure a containerized working environment for a fullstack nuxt-laravel app on AWS using terraform as IaC tool.
 
 ## Arquitecture diagram
+![terraform-sample-aws drawio (1)](https://user-images.githubusercontent.com/46251023/147390495-2ca8a472-0e22-449a-9cd5-b3973bc01a7c.png)
 
 ## Set up
 
