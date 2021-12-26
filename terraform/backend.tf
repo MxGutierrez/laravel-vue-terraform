@@ -117,8 +117,8 @@ resource "aws_ecs_service" "backend" {
   cluster                            = aws_ecs_cluster.cluster.id
   task_definition                    = aws_ecs_task_definition.backend.arn
   launch_type                        = "FARGATE"
-  deployment_minimum_healthy_percent = 100
-  desired_count                      = 1
+  deployment_minimum_healthy_percent = 50
+  desired_count                      = 2
 
   network_configuration {
     subnets         = aws_subnet.apps[*].id
