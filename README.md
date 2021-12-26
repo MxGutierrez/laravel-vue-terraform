@@ -27,6 +27,22 @@ The scope for this project is to configure a containerized working environment f
 
 ![AWS diagram](https://user-images.githubusercontent.com/46251023/147390495-2ca8a472-0e22-449a-9cd5-b3973bc01a7c.png)
 
+It's a containerized Laravel + NuxtJS [three-tier arquitecture](https://docs.aws.amazon.com/whitepapers/latest/serverless-multi-tier-architectures-api-gateway-lambda/three-tier-architecture-overview.html) running on ECS Fargate on top of VPC subnets across 2 availability zones.
+
+Each laravel task runs 2 containers, 1 PHP FPM process and 1 Nginx container that forwards traffic to the earlier one.
+For Nuxt SSR to work, frontend tasks require access to backend instances. This is solved with the help of Route 53 and CloudMap for service discovery. It works by configuring the backend's ECS service to automatically register all tasks to Route 53 under a friendly DNS name that is later injected as an environment variable into frontend tasks to easily communicate with them.
+
+The Application Load Balancer handles incoming internet requests and forwards them to the appropriate target groups tasks. Any request path that starts with `/api/` is forwarded to the backend's target group, any other path ends in the frontend's.
+
+A NAT gateway is created inside a public subnet to provide backend tasks and RDS access to the internet while in private subnets.
+
+The CI/CD flow starts with a new code push to repository's master branch which wakes up a new CodePipeline release via webhook. The CodePipeline steps are as follows:
+
+1. Fetch and store repo's source code into an S3 bucket.
+1. Start 2 CodeBuild processes for building frontend and backend's docker images and push them into their respective ECR repositories.
+1. Start 2 new CodeBuild processes for initializing ECS deployments with the new frontend and backend images.
+1. ECS updates each ECS service with the new images and executes a rolling deployment strategy to ensure high availability.
+
 ## Set up
 
 ### Local environment
