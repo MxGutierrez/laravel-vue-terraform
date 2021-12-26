@@ -1,0 +1,13 @@
+aws_region="us-east-1"
+aws_access_key=
+aws_secret_key=
+
+github_repo=
+github_branch="master"
+
+dockerhub_username=
+dockerhub_password=
+
+db_name="tfsample"
+db_username="dbuser"
+db_password="12345678"
