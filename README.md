@@ -23,11 +23,49 @@
 
 The scope for this project is to configure a containerized working environment for a fullstack nuxt-laravel app on AWS using terraform as IaC tool.
 
-## Arquitecture diagram
+## Arquitecture
 
-![terraform-sample-aws drawio (1)](https://user-images.githubusercontent.com/46251023/147390495-2ca8a472-0e22-449a-9cd5-b3973bc01a7c.png)
+![AWS diagram](https://user-images.githubusercontent.com/46251023/147390495-2ca8a472-0e22-449a-9cd5-b3973bc01a7c.png)
 
 ## Set up
+
+### Local environment
+
+1. Run `cd frontend`
+1. Run `cp .env.example .env`
+
+1. Run `cd ../backend`
+1. Run `cp .env.example .env`
+1. Run `docker-compose up`
+1. Run `docker-compose exec backend composer install`
+1. Run `docker-compose exec php artisan key:generate`
+
+1. Check the app running at http://localhost:3000. You should see the following screen:
+   ![Nuxt screen](https://user-images.githubusercontent.com/46251023/147396029-d5eb0ebb-1b73-43d3-89b3-7682a628dfad.png)
+
+### Cloud environment
+
+1. [Install terraform cli](https://learn.hashicorp.com/tutorials/terraform/install-cli).
+
+1. Run `cd terraform`
+1. Run `cp terraform.tfvars.example terraform.tfvars`
+
+1. Log into AWS account and create a user with programatic access and attach the Administrator access policy (arn:aws:iam::aws:policy/AdministratorAccess). This user will be used by terraform to provision infrastructure.
+   Copy the access key ID and secret access key and paste it into terraform.tfvars and then fill the other variables.
+
+1. Run `terraform init` to download dependencies.
+
+1. Run `terraform apply --auto-approve` and wait a couple of minutes until all resources are successfully created. Notice the `alb_dns_name` outputed once the apply finished.
+
+1. Go to Codepipeline->Settings->Connections or follow [this link](https://console.aws.amazon.com/codesuite/settings/connections), click the recently created github connection that is currently pending. Once inside click on "Update pending connection" and allow access to the github repository.
+
+1. Find the recently created pipeline that should be in "Failed" state because it started executing without the github connection approved, and start a new release.
+
+1. Wait for the de pipeline to finish. You can see the process of the deployment through the ecs cluster [here](https://console.aws.amazon.com/ecs) and clicking any of the backend or frontend services and then going to the "Deployment" tab.
+
+1. Once the deployment finished, enter the value of `alb_dns_name` on the browser and you should see the base NuxtJS landing page with a message below that says "Response: DB connected" which means that laravel was able to connect to the RDS database. The response was rendered server side so it means that the frontend task was able to communicate with a backend task.
+
+1. Clear resources by running `terraform destroy --auto-approve` and once the destroy is complete delete the user previously created.
 
 ## Costs
 
@@ -53,13 +91,12 @@ Migrations are risky and prone to fail due to any possible environment specific 
 Having the migration first is the other option but as soon as the migration completes and the code is deploying, the currently deployed containers will break as shown in the first example above. The inconsistant state will also last longer if executing a strategy like rolling deployment where all instances are not immediately updated so the whole process would be inconsistant until the last instance finally gets the new version.
 Based on my investigation, people seem to like the former one the most, where in the case there must be a breaking change migration, a new coder version should be deployed previously to make the app work in both the old in the old schema and in the new one. Which would solve the issue stated.
 
-#### How
+#### Where & How
 
-#### Where
+Where should migrations by run? In codebuild? The issue is that the migration should be run from inside a laravel container. What if the container has many other dependencies? should codebuild know how to build the complete environment including having DB credentials? Sounds wrong IMO.
+Maybe a good idea would be something like starting a temporal task with the new code from codebuild that runs migrations and exits.
 
-In codebuild? but the migration should be run from inside a laravel container. What if the container has many other dependencies, should codebuild know how to build the complete environment including having DB credentials? Sounds wrong IMO.
-
-#### 2. Find solution for laravel's scheduler and queue workers (Harder than it looks)
+#### 2. Find solution for laravel's scheduler and queue workers (harder than it looks)
 
 Laravel provides ways for managing [queue](https://laravel.com/docs/8.x/queues#dispatching-jobs) events and [scheduling](https://laravel.com/docs/8.x/scheduling) tasks to be run every given time and I find them really useful.
 Based on the problems I had, I found both queue and scheduler have their own independent issues, so I should each one deserves a subtitle on its own.
@@ -93,3 +130,5 @@ At the moment, regarding Terraform changes (applies), this project is designed t
 There are great articles out there that everytime the pipeline runs, `terraform plan` command is executed and whenever terraform suggests changes, a manual approval is required to confirm the apply and modify the current infrastructure, everything taken care from the pipeline ui interface.
 
 #### 5. Multi env (staging environment)
+
+The project works with a single environment. Would be great to bring a staging environment into the flow to test out infrastructure changes before going into production.
