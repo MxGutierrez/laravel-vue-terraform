@@ -25,7 +25,7 @@ The scope for this project is to configure a containerized working environment f
 
 ## Arquitecture
 
-![AWS diagram](https://user-images.githubusercontent.com/46251023/147390495-2ca8a472-0e22-449a-9cd5-b3973bc01a7c.png)
+![Architecture diagram](https://user-images.githubusercontent.com/46251023/147506043-215795c7-fea1-432e-9260-06413acedf23.png)
 
 It's a containerized Laravel + NuxtJS [three-tier arquitecture](https://docs.aws.amazon.com/whitepapers/latest/serverless-multi-tier-architectures-api-gateway-lambda/three-tier-architecture-overview.html) running on ECS Fargate on top of VPC subnets across 2 availability zones.
 
