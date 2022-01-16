@@ -77,7 +77,7 @@ The CI/CD flow starts with a new code push to the repository's master branch whi
 
 1. Find the recently created pipeline that should be in a "Failed" state because it started executing without the Github connection approved, and manually start a new release.
 
-1. Wait for the de pipeline to finish. You can see the status of the deployment through the ECS cluster [here](https://console.aws.amazon.com/ecs) and clicking any of the backend or frontend services and then going to the "Deployment" tab.
+1. Wait for the pipeline to finish. You can see the status of the deployment through the ECS cluster [here](https://console.aws.amazon.com/ecs) and clicking any of the backend or frontend services and then going to the "Deployment" tab.
 
 1. Once the deployment finishes, enter the value of `alb_dns_name` previously printed on the browser and you should see the base NuxtJS landing page with a message below that says "Response: DB connected" which means that laravel was able to connect to the RDS database. The response was rendered server-side so it means that the frontend task was also able to communicate with a backend task.
 
