@@ -23,11 +23,11 @@
 
 The scope for this project is to configure a containerized working environment for a full-stack nuxt-laravel app on AWS using terraform as IaC tool.
 
-## Arquitecture
+## Architecture
 
 ![Architecture diagram](https://user-images.githubusercontent.com/46251023/147506043-215795c7-fea1-432e-9260-06413acedf23.png)
 
-It's a containerized Laravel + NuxtJS [three-tier arquitecture](https://docs.aws.amazon.com/whitepapers/latest/serverless-multi-tier-architectures-api-gateway-lambda/three-tier-architecture-overview.html) running on ECS Fargate on top of VPC subnets across 2 availability zones.
+It's a containerized Laravel + NuxtJS [three-tier architecture](https://docs.aws.amazon.com/whitepapers/latest/serverless-multi-tier-architectures-api-gateway-lambda/three-tier-architecture-overview.html) running on ECS Fargate on top of VPC subnets across 2 availability zones.
 
 Each laravel task runs 2 containers, 1 PHP FPM process, and 1 Nginx container that forwards traffic to the earlier one.
 For Nuxt SSR to work, frontend tasks require access to backend instances. This is solved with the help of Route 53 and CloudMap for service discovery. It works by configuring the backend's ECS service to automatically register all tasks to Route 53 under a friendly DNS name that is later injected as an environment variable into frontend tasks to easily communicate with them.
